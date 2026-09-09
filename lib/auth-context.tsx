@@ -51,8 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // The token itself lives in an httpOnly cookie, invisible to JS — this
-  // "whoami" call is how the client discovers whether that cookie is valid.
   const refreshUser = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/me", { credentials: "include" });

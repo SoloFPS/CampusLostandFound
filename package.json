@@ -12,8 +12,10 @@
     "@hookform/resolvers": "^5.9.1",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.11.0",
+    "jose": "^6.2.12",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.43.0",
+    "mongodb": "^7.6.0",
     "mongoose": "^9.9.5",
     "next": "16.3.4",
     "react": "19.2.8",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
