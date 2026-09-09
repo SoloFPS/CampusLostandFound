@@ -1,26 +1,48 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Core palette */
+  --color-ink: #1c2333;
+  --color-ink-soft: #3a4256;
+  --color-paper: #faf9f7;
+  --color-paper-raised: #ffffff;
+  --color-line: #e4e1d8;
+  --color-muted: #6b6f76;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Accent */
+  --color-amber: #e8a33d;
+  --color-amber-deep: #c97f1f;
+  --color-amber-tint: #fdf3e2;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Status colors (functional, not decorative) */
+  --color-lost: #b5502f;
+  --color-lost-bg: #fbede7;
+  --color-found: #3d7a5c;
+  --color-found-bg: #e9f3ec;
+
+  /* Fonts (populated via next/font variables in layout.tsx) */
+  --font-display: var(--font-space-grotesk), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+/* Corkboard dot-grid texture used behind the hero's pinned cards */
+.bg-pinboard {
+  background-image: radial-gradient(var(--color-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
