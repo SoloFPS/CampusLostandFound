@@ -3,34 +3,38 @@ import mongoose from "mongoose";
 const MONGODB_URI = process.env.DB_CONNECTION_STRING;
 
 if (!MONGODB_URI) {
-  throw new Error("DB_CONNECTION_STRING is not defined");
+  throw new Error("Missing DB_CONNECTION_STRING in environment variables");
 }
 
-const globalForMongoose = globalThis as unknown as {
-  mongoose: {
-    conn: typeof mongoose | null;
-    promise: Promise<typeof mongoose> | null;
-  };
-};
-
-if (!globalForMongoose.mongoose) {
-  globalForMongoose.mongoose = {
-    conn: null,
-    promise: null,
-  };
+// Next.js hot-reloads modules in dev, which would otherwise open a new
+// connection on every request. Cache the connection promise on the
+// global object so it survives module reloads.
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
 }
+
+declare global {
+  // eslint-disable-next-line no-var
+  var _mongooseCache: MongooseCache | undefined;
+}
+
+const cached: MongooseCache = global._mongooseCache ?? { conn: null, promise: null };
+global._mongooseCache = cached;
 
 export async function connectDB() {
-  if (globalForMongoose.mongoose.conn) {
-    return globalForMongoose.mongoose.conn;
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URI as string).then((m) => m);
   }
 
-  if (!globalForMongoose.mongoose.promise) {
-    globalForMongoose.mongoose.promise = mongoose.connect(MONGODB_URI);
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    cached.promise = null;
+    throw err;
   }
 
-  globalForMongoose.mongoose.conn =
-    await globalForMongoose.mongoose.promise;
-
-  return globalForMongoose.mongoose.conn;
+  return cached.conn;
 }

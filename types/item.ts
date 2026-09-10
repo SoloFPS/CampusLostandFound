@@ -35,3 +35,15 @@ export interface ItemFilters {
   location: string; // "all" or a specific location
   date: string; // "from" date as ISO string, or "" for no filter
 }
+
+export const ITEM_TYPES: ItemType[] = ["lost", "found"];
+export const ITEM_CATEGORIES: ItemCategory[] = [
+  "electronics",
+  "accessories",
+  "documents",
+  "clothing",
+  "bags",
+  "keys",
+  "books",
+  "other",
+];

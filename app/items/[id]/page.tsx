@@ -9,7 +9,10 @@ import {
   ShieldAlert,
   Loader2,
 } from "lucide-react";
-import ItemDetails, { type Item } from "@/components/items/ItemDetails";
+import ItemDetails from "@/components/items/ItemDetails";
+import type { Item } from "@/types/item";
+// remove the old `export interface Item` re-export from ItemDetails if you had one
+
 
 // TODO: replace with real session state from an auth hook/context
 // once /api/auth/me is wired up. Mirrors the placeholder in Navbar.tsx.

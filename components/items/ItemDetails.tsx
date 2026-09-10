@@ -1,5 +1,5 @@
 "use client";
-import PotentialMatches from "./PotentialMatches";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -19,28 +19,7 @@ import {
   ImageOff,
 } from "lucide-react";
 import ContactPoster from "./ContactPoster";
-
-export type ItemType = "lost" | "found";
-export type ItemStatus = "active" | "resolved";
-
-export interface Item {
-  id: string;
-  type: ItemType;
-  status: ItemStatus;
-  title: string;
-  description: string;
-  category: string;
-  location: string;
-  date: string; // ISO date the item was lost/found
-  postedAt: string; // ISO date the post was created
-  imageUrl?: string;
-  poster: {
-    id: string;
-    name: string;
-    email?: string;
-    phone?: string;
-  };
-}
+import type { Item } from "@/types/item";
 
 interface ItemDetailsProps {
   item: Item;
@@ -68,7 +47,7 @@ export default function ItemDetails({
   const [isResolving, setIsResolving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isOwner = Boolean(currentUserId) && currentUserId === item.poster.id;
+  const isOwner = Boolean(currentUserId) && currentUserId === item.postedBy.id;
   const isLost = item.type === "lost";
 
   const handleResolve = async () => {
@@ -171,7 +150,6 @@ export default function ItemDetails({
             label={isLost ? "Date lost" : "Date found"}
             value={formatDate(item.date)}
           />
-          <DetailRow icon={Clock} label="Posted" value={formatDate(item.postedAt)} />
         </dl>
 
         <div className="mt-6">
@@ -184,21 +162,17 @@ export default function ItemDetails({
         {/* Poster info */}
         <div className="mt-6 flex items-center gap-3 rounded-md border border-line bg-paper-raised p-3">
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-amber-tint text-sm font-semibold text-amber-deep">
-            {item.poster.name.charAt(0)}
+            {item.postedBy.name.charAt(0)}
           </span>
           <div>
             <p className="text-xs text-muted">Posted by</p>
-            <p className="text-sm font-medium text-ink">{item.poster.name}</p>
+            <p className="text-sm font-medium text-ink">{item.postedBy.name}</p>
           </div>
         </div>
 
         {/* Actions */}
         <div className="mt-6 flex flex-col gap-3">
-          <ContactPoster
-            posterName={item.poster.name}
-            email={item.poster.email}
-            phone={item.poster.phone}
-          />
+          <ContactPoster posterName={item.postedBy.name} />
 
           <button
             onClick={handleReport}
@@ -245,9 +219,6 @@ export default function ItemDetails({
             </div>
           )}
         </div>
-
-        {isLost && <PotentialMatches itemId={item.id} />}
-        
       </div>
     </div>
   );
