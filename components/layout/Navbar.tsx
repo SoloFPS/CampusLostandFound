@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Radar, Menu, X, Plus, User, LogOut } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -12,13 +15,20 @@ const navLinks = [
 ];
 
 export default function Navbar() {
+  const router = useRouter();
+  const { user, isLoading, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // TODO: replace with real session state from an auth hook/context
-  // once /api/auth/me is wired up. Kept local for UI-only development.
-  const [isLoggedIn] = useState(false);
-  const currentUser = { name: "Aditi R." };
+  const isLoggedIn = Boolean(user);
+
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    setMobileOpen(false);
+    await logout();
+    toast.success("Logged out.");
+    router.push("/");
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper-raised/90 backdrop-blur">
@@ -44,7 +54,9 @@ export default function Navbar() {
 
         {/* Desktop auth area */}
         <div className="hidden items-center gap-3 md:flex">
-          {isLoggedIn ? (
+          {isLoading ? (
+            <div className="h-8 w-20 animate-pulse rounded-full bg-paper" />
+          ) : isLoggedIn && user ? (
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
@@ -53,9 +65,9 @@ export default function Navbar() {
                 aria-expanded={menuOpen}
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-tint text-xs font-semibold text-amber-deep">
-                  {currentUser.name.charAt(0)}
+                  {user.name.charAt(0)}
                 </span>
-                {currentUser.name}
+                {user.name}
               </button>
               {menuOpen && (
                 <div
@@ -65,6 +77,7 @@ export default function Navbar() {
                   <Link
                     href="/my-posts"
                     role="menuitem"
+                    onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink-soft hover:bg-paper"
                   >
                     <User className="h-4 w-4" aria-hidden="true" />
@@ -72,6 +85,7 @@ export default function Navbar() {
                   </Link>
                   <button
                     role="menuitem"
+                    onClick={handleLogout}
                     className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-lost hover:bg-lost-bg"
                   >
                     <LogOut className="h-4 w-4" aria-hidden="true" />
@@ -130,8 +144,11 @@ export default function Navbar() {
             ))}
           </ul>
           <div className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
-            {isLoggedIn ? (
-              <button className="flex items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm font-medium text-lost">
+            {isLoading ? null : isLoggedIn ? (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm font-medium text-lost"
+              >
                 <LogOut className="h-4 w-4" aria-hidden="true" />
                 Logout
               </button>
@@ -139,12 +156,14 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
+                  onClick={() => setMobileOpen(false)}
                   className="rounded-md px-2 py-2.5 text-sm font-medium text-ink-soft hover:bg-paper"
                 >
                   Login
                 </Link>
                 <Link
                   href="/register"
+                  onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-center gap-1 rounded-md bg-ink px-2 py-2.5 text-sm font-medium text-paper"
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
