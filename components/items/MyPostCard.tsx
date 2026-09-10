@@ -16,7 +16,7 @@ import {
   ImageOff,
   Loader2,
 } from "lucide-react";
-import type { Item } from "./ItemDetails";
+import type { Item } from "@/types/item";
 
 interface MyPostCardProps {
   item: Item;

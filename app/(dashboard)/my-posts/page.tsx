@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Inbox, ServerCrash, Loader2, PlusCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import MyPostCard from "@/components/items/MyPostCard";
-import type { Item } from "@/components/items/ItemDetails";
+import type { Item } from "@/types/item";
 
 type FetchState =
   | { status: "loading" }

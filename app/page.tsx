@@ -2,11 +2,37 @@ import Link from "next/link";
 import { Search, PackageX, PackageCheck } from "lucide-react";
 import SearchBar from "@/components/items/SearchBar";
 import ItemCard from "@/components/items/ItemCard";
-import { mockItems, mockStats } from "@/lib/mock-data";
+import { connectDB } from "@/lib/db";
+import ItemModel from "@/models/Item";
+import type { Item } from "@/types/item";
 
-export default function HomePage() {
-  const recentItems = mockItems.slice(0, 4);
-  const pinnedPreview = mockItems.slice(0, 3);
+import { serializeItems } from "@/lib/serializers/item";
+
+async function getHomePageData() {
+  await connectDB();
+
+  const [recentItemsRaw, pinnedPreviewRaw, totalCount, resolvedCount, activeCount] =
+    await Promise.all([
+      ItemModel.find().sort({ createdAt: -1 }).limit(4).lean(),
+      ItemModel.find().sort({ createdAt: -1 }).limit(3).lean(),
+      ItemModel.countDocuments(),
+      ItemModel.countDocuments({ status: "resolved" }),
+      ItemModel.countDocuments({ status: "active" }),
+    ]);
+
+  return {
+    recentItems: serializeItems(recentItemsRaw),
+    pinnedPreview: serializeItems(pinnedPreviewRaw),
+    stats: [
+      { label: "Items posted", value: totalCount },
+      { label: "Successfully reunited", value: resolvedCount },
+      { label: "Currently active", value: activeCount },
+    ],
+  };
+}
+
+export default async function HomePage() {
+  const { recentItems, pinnedPreview, stats } = await getHomePageData();
 
   return (
     <>
@@ -59,7 +85,7 @@ export default function HomePage() {
       {/* Stats */}
       <section className="border-b border-line bg-paper-raised">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-3 sm:px-6">
-          {mockStats.map((stat) => (
+          {stats.map((stat) => (
             <div key={stat.label}>
               <p className="font-display text-3xl font-semibold text-ink">
                 {stat.value.toLocaleString()}

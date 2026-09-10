@@ -1,13 +1,6 @@
 import { Item, ItemFilters } from "@/types/item";
-import { ItemFormValues } from "@/lib/validators/item";
-import { mockItems } from "@/lib/mock-data";
 
-// All API calls go through this base so no component or page ever
-// hardcodes a URL. Same-origin by default, since API routes live inside
-// this Next.js app. Only needed if the API is ever split into its own service.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
-
-const PAGE_SIZE = 8;
 
 export interface GetItemsResponse {
   items: Item[];
@@ -16,62 +9,81 @@ export interface GetItemsResponse {
 }
 
 /**
- * Fetches a filtered, paginated list of items.
- *
- * Currently backed by mock data plus an artificial delay, so loading and
- * error states can be built and reviewed against realistic conditions.
- * Swap the body for `fetch(`${API_BASE_URL}/api/items?...`)` once the
- * route handler exists — the signature and return shape are already
- * API-shaped, so callers won't need to change.
+ * Fetches a filtered, paginated list of items from the real API.
  */
 export async function getItems(
   filters: ItemFilters,
   page: number = 1
 ): Promise<GetItemsResponse> {
-  await simulateNetworkDelay();
+  const params = new URLSearchParams();
+  if (filters.query) params.set("query", filters.query);
+  if (filters.type !== "all") params.set("type", filters.type);
+  if (filters.category !== "all") params.set("category", filters.category);
+  if (filters.location !== "all") params.set("location", filters.location);
+  if (filters.date) params.set("date", filters.date);
+  params.set("page", String(page));
 
-  const filtered = mockItems.filter((item) => {
-    if (filters.type !== "all" && item.type !== filters.type) return false;
-    if (filters.category !== "all" && item.category !== filters.category) return false;
-    if (filters.location !== "all" && item.location !== filters.location) return false;
-    if (filters.date && item.date < filters.date) return false;
-    if (filters.query) {
-      const q = filters.query.toLowerCase();
-      const haystack = `${item.title} ${item.description}`.toLowerCase();
-      if (!haystack.includes(q)) return false;
-    }
-    return true;
+  const res = await fetch(`${API_BASE_URL}/api/items?${params.toString()}`, {
+    credentials: "include",
   });
 
-  const start = (page - 1) * PAGE_SIZE;
-  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch items (${res.status})`);
+  }
 
-  return {
-    items: pageItems,
-    total: filtered.length,
-    hasMore: start + PAGE_SIZE < filtered.length,
-  };
+  return res.json();
 }
 
-export interface CreateItemPayload extends ItemFormValues {
+export interface CreateItemPayload {
+  title: string;
+  description: string;
+  type: Item["type"];
+  category: Item["category"];
+  location: string;
+  date: string;
   image: File | null;
 }
 
 /**
- * Placeholder create call — wire this to
- * `POST ${API_BASE_URL}/api/items` (multipart, or JSON + a separate
- * signed Cloudinary upload) once the route handler exists.
+ * Uploads the image (if present) then creates the item. Mirrors the
+ * two-step flow NewItemForm already does inline — kept here too so any
+ * other caller of createItem gets the same real behavior.
  */
-export async function createItem(
-  payload: CreateItemPayload
-): Promise<{ id: string }> {
-  await simulateNetworkDelay();
-  console.log("createItem payload (placeholder):", payload);
-  return { id: "mock-id" };
-}
+export async function createItem(payload: CreateItemPayload): Promise<{ id: string }> {
+  const { image, ...fields } = payload;
 
-function simulateNetworkDelay(ms: number = 600) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  if (!image) {
+    throw new Error("An image is required.");
+  }
+
+  const uploadForm = new FormData();
+  uploadForm.append("file", image);
+
+  const uploadRes = await fetch(`${API_BASE_URL}/api/upload`, {
+    method: "POST",
+    credentials: "include",
+    body: uploadForm,
+  });
+  if (!uploadRes.ok) {
+    const data = await uploadRes.json().catch(() => null);
+    throw new Error(data?.error ?? "Failed to upload image");
+  }
+  const { imageUrl } = await uploadRes.json();
+
+  const res = await fetch(`${API_BASE_URL}/api/items`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ ...fields, imageUrl }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error ?? "Failed to create item");
+  }
+
+  const data = await res.json();
+  return { id: data.item.id };
 }
 
 export { API_BASE_URL };

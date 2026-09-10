@@ -2,13 +2,18 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import Item from "@/models/Item";
+import { serializeItem } from "@/lib/serializers/item";
+import { serialize } from "v8";
 
 function isValidId(id: string) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
 // GET /api/items/:id — item detail page
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
 
   if (!isValidId(id)) {
@@ -17,21 +22,28 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   try {
     await connectDB();
-    const item = await Item.findById(id).lean({ virtuals: true });
-
+    const item = await Item.findById(id).lean();
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
-    return NextResponse.json(item);
+  
+
+    return NextResponse.json(serializeItem(item));
   } catch (err) {
     console.error(`GET /api/items/${id} failed:`, err);
-    return NextResponse.json({ error: "Failed to fetch item" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch item" },
+      { status: 500 },
+    );
   }
 }
 
 // PATCH /api/items/:id — partial update (used for "Mark as Resolved" and Edit)
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } },
+) {
   const { id } = params;
 
   if (!isValidId(id)) {
@@ -54,12 +66,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ item: updated });
   } catch (err) {
     console.error(`PATCH /api/items/${id} failed:`, err);
-    return NextResponse.json({ error: "Failed to update item" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update item" },
+      { status: 500 },
+    );
   }
 }
 
 // DELETE /api/items/:id
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: { id: string } },
+) {
   const { id } = params;
 
   if (!isValidId(id)) {
@@ -77,6 +95,9 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(`DELETE /api/items/${id} failed:`, err);
-    return NextResponse.json({ error: "Failed to delete item" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete item" },
+      { status: 500 },
+    );
   }
 }

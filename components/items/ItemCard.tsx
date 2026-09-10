@@ -1,17 +1,21 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Pin, MapPin, Calendar, CheckCircle2, ArrowRight } from "lucide-react";
+import { Pin, MapPin, Calendar, CheckCircle2, ArrowRight, ImageOff } from "lucide-react";
 import { Item } from "@/types/item";
 import ItemBadge from "./ItemBadge";
 import { CATEGORY_OPTIONS } from "@/lib/constants/item-options";
 
 interface ItemCardProps {
   item: Item;
-  /** Slight tilt for the "pinned to a corkboard" hero treatment */
   pinned?: boolean;
 }
 
 export default function ItemCard({ item, pinned = false }: ItemCardProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+
   const categoryLabel =
     CATEGORY_OPTIONS.find((c) => c.value === item.category)?.label ?? item.category;
 
@@ -30,13 +34,21 @@ export default function ItemCard({ item, pinned = false }: ItemCardProps) {
       )}
 
       <div className="relative aspect-[4/3] w-full bg-line">
-        <Image
-          src={item.imageUrl}
-          alt={item.title}
-          fill
-          sizes="(max-width: 768px) 100vw, 300px"
-          className="object-cover"
-        />
+        {item.imageUrl && !imageFailed ? (
+          <Image
+            src={item.imageUrl}
+            alt={item.title}
+            fill
+            sizes="(max-width: 768px) 100vw, 300px"
+            className="object-cover"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-1 text-muted">
+            <ImageOff className="h-6 w-6" aria-hidden="true" />
+            <span className="text-xs">No image</span>
+          </div>
+        )}
         <ItemBadge type={item.type} className="absolute left-3 top-3" />
         {item.status === "resolved" && (
           <span className="absolute right-3 top-3 flex items-center gap-1 rounded-md bg-ink/85 px-2 py-1 text-xs font-medium text-paper">
